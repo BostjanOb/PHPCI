@@ -149,7 +149,7 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
         $success = true;
 
-        $this->phpci->logExecOutput(false);
+        //$this->phpci->logExecOutput(false);
 
         // Run any config files first. This can be either a single value or an array.
         if ($this->xmlConfigFile !== null) {
@@ -177,7 +177,7 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         $this->build->storeMeta('phpunit-errors', $failures);
         $this->build->storeMeta('phpunit-data', $output);
 
-        $this->phpci->logExecOutput(true);
+        //$this->phpci->logExecOutput(true);
 
         return $success;
     }
