@@ -20,11 +20,11 @@ use PHPCI\Model\Project;
 use PHPCI\Service\BuildService;
 
 /**
-* Build Controller - Allows users to run and view builds.
-* @author       Dan Cryer <dan@block8.co.uk>
-* @package      PHPCI
-* @subpackage   Web
-*/
+ * Build Controller - Allows users to run and view builds.
+ * @author       Dan Cryer <dan@block8.co.uk>
+ * @package      PHPCI
+ * @subpackage   Web
+ */
 class BuildController extends \PHPCI\Controller
 {
     /**
@@ -47,8 +47,8 @@ class BuildController extends \PHPCI\Controller
     }
 
     /**
-    * View a specific build.
-    */
+     * View a specific build.
+     */
     public function view($buildId)
     {
         try {
@@ -61,18 +61,26 @@ class BuildController extends \PHPCI\Controller
             throw new NotFoundException(Lang::get('build_x_not_found', $buildId));
         }
 
-        $this->view->plugins  = $this->getUiPlugins();
-        $this->view->build    = $build;
-        $this->view->data     = $this->getBuildData($build);
+        $this->view->statusIcons = ['fa-clock-o', 'fa-cogs', 'fa-check', 'fa-remove'];
+        $this->view->statusLabels = ['pending', 'running', 'successful', 'failed'];
+        $this->view->statusClasses = ['text-blue', 'text-yellow', 'text-green', 'text-red'];
+        $this->view->plugins = $this->getUiPlugins();
+        $this->view->build = $build;
+        $this->view->data = $this->getBuildData($build);
 
         $this->view->meta = [];
+        $this->view->pluginsMessage = [];
         $meta = $this->buildStore->getMeta('plugin-summary', $build->getProjectId(), $buildId, $build->getBranch(), 1);
-        if ( isset($meta[0]['meta_value']) )
-            $this->view->meta = $meta[0]['meta_value'];
+        if (isset($meta[0]['meta_value'])) {
 
-        $this->view->statusIcons = [ 'fa-clock-o', 'fa-cogs', 'fa-check', 'fa-remove' ];
-        $this->view->statusLabels = [ 'pending', 'running', 'successful', 'failed' ];
-        $this->view->statusClasses = ['text-blue', 'text-yellow', 'text-green', 'text-red'];
+            $plugins = [];
+            $this->view->meta = $meta[0]['meta_value'];
+            foreach ($this->view->meta as $steps) {
+                $plugins = array_merge($plugins, array_keys($steps));
+            }
+
+            $this->view->pluginsMessage = $this->buildStore->getMessagesForPlugins($plugins, $build->getProjectId(), $buildId, $build->getBranch());
+        }
 
 //        echo '<pre>'; print_r($this->view->meta); die;
 
@@ -118,7 +126,7 @@ class BuildController extends \PHPCI\Controller
      */
     protected function getUiPlugins()
     {
-        $rtn = array();
+        $rtn = [];
         $path = APPLICATION_PATH . 'public/assets/js/build-plugins/';
         $dir = opendir($path);
 
@@ -134,8 +142,8 @@ class BuildController extends \PHPCI\Controller
     }
 
     /**
-    * AJAX call to get build data:
-    */
+     * AJAX call to get build data:
+     */
     public function data($buildId)
     {
         $response = new JsonResponse();
@@ -143,7 +151,7 @@ class BuildController extends \PHPCI\Controller
 
         if (!$build) {
             $response->setResponseCode(404);
-            $response->setContent(array());
+            $response->setContent([]);
             return $response;
         }
 
@@ -156,7 +164,7 @@ class BuildController extends \PHPCI\Controller
      */
     public function meta($buildId)
     {
-        $build  = BuildFactory::getBuildById($buildId);
+        $build = BuildFactory::getBuildById($buildId);
         $key = $this->getParam('key', null);
         $numBuilds = $this->getParam('num_builds', 1);
         $data = null;
@@ -171,17 +179,17 @@ class BuildController extends \PHPCI\Controller
     }
 
     /**
-    * Get build data from database and json encode it:
-    */
+     * Get build data from database and json encode it:
+     */
     protected function getBuildData(Build $build)
     {
-        $data               = array();
-        $data['status']     = (int)$build->getStatus();
-        $data['log']        = $this->cleanLog($build->getLog());
-        $data['created']    = !is_null($build->getCreated()) ? $build->getCreated()->format('Y-m-d H:i:s') : null;
-        $data['started']    = !is_null($build->getStarted()) ? $build->getStarted()->format('Y-m-d H:i:s') : null;
-        $data['finished']   = !is_null($build->getFinished()) ? $build->getFinished()->format('Y-m-d H:i:s') : null;
-        $data['duration']   = $build->getDuration();
+        $data = [];
+        $data['status'] = (int)$build->getStatus();
+        $data['log'] = $this->cleanLog($build->getLog());
+        $data['created'] = !is_null($build->getCreated()) ? $build->getCreated()->format('Y-m-d H:i:s') : null;
+        $data['started'] = !is_null($build->getStarted()) ? $build->getStarted()->format('Y-m-d H:i:s') : null;
+        $data['finished'] = !is_null($build->getFinished()) ? $build->getFinished()->format('Y-m-d H:i:s') : null;
+        $data['duration'] = $build->getDuration();
 
         /** @var \PHPCI\Store\BuildErrorStore $errorStore */
         $errorStore = b8\Store\Factory::getStore('BuildError');
@@ -191,7 +199,7 @@ class BuildController extends \PHPCI\Controller
         $errorView->build = $build;
         $errorView->errors = $errors;
 
-        $data['errors']     = $errorStore->getErrorTotalForBuild($build->getId());
+        $data['errors'] = $errorStore->getErrorTotalForBuild($build->getId());
         $data['error_html'] = $errorView->render();
         $data['since'] = (new \DateTime())->format('Y-m-d H:i:s');
 
@@ -199,11 +207,11 @@ class BuildController extends \PHPCI\Controller
     }
 
     /**
-    * Create a build using an existing build as a template:
-    */
+     * Create a build using an existing build as a template:
+     */
     public function rebuild($buildId)
     {
-        $copy   = BuildFactory::getBuildById($buildId);
+        $copy = BuildFactory::getBuildById($buildId);
 
         if (empty($copy)) {
             throw new NotFoundException(Lang::get('build_x_not_found', $buildId));
@@ -216,13 +224,13 @@ class BuildController extends \PHPCI\Controller
         }
 
         $response = new b8\Http\Response\RedirectResponse();
-        $response->setHeader('Location', PHPCI_URL.'build/view/' . $build->getId());
+        $response->setHeader('Location', PHPCI_URL . 'build/view/' . $build->getId());
         return $response;
     }
 
     /**
-    * Delete a build.
-    */
+     * Delete a build.
+     */
     public function delete($buildId)
     {
         $this->requireAdmin();
@@ -236,13 +244,13 @@ class BuildController extends \PHPCI\Controller
         $this->buildService->deleteBuild($build);
 
         $response = new b8\Http\Response\RedirectResponse();
-        $response->setHeader('Location', PHPCI_URL.'project/view/' . $build->getProjectId());
+        $response->setHeader('Location', PHPCI_URL . 'project/view/' . $build->getProjectId());
         return $response;
     }
 
     /**
-    * Parse log for unix colours and replace with HTML.
-    */
+     * Parse log for unix colours and replace with HTML.
+     */
     protected function cleanLog($log)
     {
         return AnsiConverter::convert($log);
@@ -253,10 +261,10 @@ class BuildController extends \PHPCI\Controller
      */
     public function latest()
     {
-        $rtn = array(
+        $rtn = [
             'pending' => $this->formatBuilds($this->buildStore->getByStatus(Build::STATUS_NEW)),
             'running' => $this->formatBuilds($this->buildStore->getByStatus(Build::STATUS_RUNNING)),
-        );
+        ];
 
         $response = new JsonResponse();
         $response->setContent($rtn);
@@ -270,9 +278,9 @@ class BuildController extends \PHPCI\Controller
      */
     protected function formatBuilds($builds)
     {
-        Project::$sleepable = array('id', 'title', 'reference', 'type');
+        Project::$sleepable = ['id', 'title', 'reference', 'type'];
 
-        $rtn = array('count' => $builds['count'], 'items' => array());
+        $rtn = ['count' => $builds['count'], 'items' => []];
 
         foreach ($builds['items'] as $build) {
             $item = $build->toArray(1);

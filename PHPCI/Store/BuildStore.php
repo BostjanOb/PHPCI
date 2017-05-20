@@ -128,6 +128,46 @@ class BuildStore extends BuildStoreBase
         }
     }
 
+    public function getMessagesForPlugins(array $plugins, $projectId, $buildId, $branch = null) {
+        if ( count($plugins) == 0 ) {
+            return [];
+        }
+
+        array_walk($plugins, function(&$item) {
+           $item = Database::getConnection('read')->quote( $item . ':message' );
+        });
+
+        $pluginsQuery = implode(',', $plugins);
+
+        $query = "SELECT bm.build_id, bm.meta_key, bm.meta_value
+                    FROM build_meta AS bm
+                    LEFT JOIN build b ON b.id = bm.build_id
+                    WHERE   bm.meta_key IN ({$pluginsQuery})
+                      AND   bm.project_id = :projectId
+                       AND bm.build_id = :buildId";
+
+        // Include specific branch information if required:
+        if (!is_null($branch)) {
+            $query .= ' AND b.branch = :branch ';
+        }
+
+        $stmt = Database::getConnection('read')->prepare($query);
+        $stmt->bindValue(':projectId', (int)$projectId, \PDO::PARAM_INT);
+        $stmt->bindValue(':buildId', (int)$buildId, \PDO::PARAM_INT);
+
+        if (!is_null($branch)) {
+            $stmt->bindValue(':branch', $branch, \PDO::PARAM_STR);
+        }
+
+        if ($stmt->execute()) {
+            $rtn = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            return array_column($rtn, 'meta_value', 'meta_key');
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Return build metadata by key, project and optionally build id.
      * @param $key

@@ -105,7 +105,7 @@ class PhpParallelLint implements \PHPCI\Plugin
 
         $matches = array();
         if (preg_match_all('/Parse error\:/', $output, $matches)) {
-            $this->build->storeMeta('phplint-errors', count($matches[0]));
+            $this->build->storeMeta('php_parallel_lint:message', 'Parse errors: ' . count($matches[0]));
         }
 
         return $success;

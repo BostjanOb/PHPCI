@@ -179,6 +179,16 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
         //$this->phpci->logExecOutput(true);
 
+        if ( ! $success ) {
+            $output = $this->phpci->getLastOutput();
+            $re = '/Failures: (\d+)/m';
+            preg_match_all($re, $output, $matches, PREG_SET_ORDER, 0);
+
+            if ( count($matches) ) {
+                $this->build->storeMeta('php_unit:message', "Failures: {$matches[0][1]}");
+            }
+        }
+
         return $success;
     }
 

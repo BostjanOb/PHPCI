@@ -167,15 +167,9 @@ class PhpCodeSniffer implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         $errors = preg_match_all('/\|.+ERROR.+\|/m', $output);
         $warnings = preg_match_all('/\|.+WARNING.+\|/m', $output);
 
-        $this->build->storeMeta('phpcs-warnings', $warnings);
-        $this->build->storeMeta('phpcs-errors', $errors);
-
-        var_dump($errors, $warnings);
-
-        var_dump(
-            ($this->allowed_warnings != -1 && $warnings > $this->allowed_warnings),
-            ($this->allowed_errors != -1 && $errors > $this->allowed_errors)
-        );
+        if ( $errors || $warnings ) {
+            $this->build->storeMeta('php_code_sniffer:message', "Errors: {$errors}; Warnings: {$warnings}");
+        }
 
         if ( ($this->allowed_warnings != -1 && $warnings > $this->allowed_warnings)
             || ($this->allowed_errors != -1 && $errors > $this->allowed_errors)

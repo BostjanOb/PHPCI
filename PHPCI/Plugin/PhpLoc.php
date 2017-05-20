@@ -82,16 +82,16 @@ class PhpLoc implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         $phploc = $this->phpci->findBinary('phploc');
 
         $success = $this->phpci->executeCommand($phploc . ' %s "%s"', $ignore, $this->directory);
-        $output  = $this->phpci->getLastOutput();
+//        $output  = $this->phpci->getLastOutput();
 
-        if (preg_match_all('/\((LOC|CLOC|NCLOC|LLOC)\)\s+([0-9]+)/', $output, $matches)) {
-            $data = array();
-            foreach ($matches[1] as $k => $v) {
-                $data[$v] = (int)$matches[2][$k];
-            }
-
-            $this->build->storeMeta('phploc', $data);
-        }
+//        if (preg_match_all('/\((LOC|CLOC|NCLOC|LLOC)\)\s+([0-9]+)/', $output, $matches)) {
+//            $data = array();
+//            foreach ($matches[1] as $k => $v) {
+//                $data[$v] = (int)$matches[2][$k];
+//            }
+//
+//            $this->build->storeMeta('phploc', $data);
+//        }
 
         return $success;
     }

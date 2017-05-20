@@ -125,7 +125,10 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         $this->executePhpMd($phpmd);
 
         $errorCount = substr_count(trim($this->phpci->getLastOutput()), "\n");
-        $this->build->storeMeta('phpmd-warnings', $errorCount);
+
+        if ( $errorCount ) {
+            $this->build->storeMeta('php_mess_detector:message', "Errors: {$errorCount}");
+        }
 
         if ($this->allowed_warnings != -1 && $errorCount > $this->allowed_warnings) {
             return false;

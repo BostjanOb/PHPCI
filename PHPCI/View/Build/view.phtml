@@ -93,11 +93,11 @@
                     </thead>
                     <tbody>
                         <?php foreach ($meta as $stageName => $stage): foreach ($stage as $plugin => $plugindata): ?>
-                            <tr>
+                            <tr class="<?php echo $statusClasses[$plugindata['status']] ?>">
                                 <td><?php echo $stageName ?></td>
                                 <td><?php echo $plugin ?></td>
                                 <td>
-                                    <span  class="<?php echo $statusClasses[$plugindata['status']] ?>">
+                                    <span>
                                         <i class="fa <?php echo  $statusIcons[$plugindata['status']] ?>"></i>&nbsp;
                                         <?php echo $statusLabels[ $plugindata['status'] ] ?>
                                     </span>
@@ -109,6 +109,14 @@
                                     ?>
                                 </td>
                             </tr>
+                            <?php if ( isset($pluginsMessage[$plugin . ':message']) ): ?>
+                                <tr class="<?php echo $statusClasses[$plugindata['status']] ?>">
+                                    <td colspan="2"></td>
+                                    <td colspan="2">
+                                        <?php echo trim($pluginsMessage[$plugin . ':message'], '"'); ?>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         <?php endforeach; endforeach; ?>
                     </tbody>
                 </table>
