@@ -103,7 +103,10 @@
                                     </span>
                                 </td>
                                 <td class="text-right">
-                                    <?php echo ( isset($plugindata['started']) ? ($plugindata['ended'] - $plugindata['started']) : '-') ?>
+                                    <?php
+                                        $ended = $plugindata['ended'] ?? time();
+                                        echo ( isset($plugindata['started']) ? ($ended - $plugindata['started']) : '-');
+                                    ?>
                                 </td>
                             </tr>
                         <?php endforeach; endforeach; ?>
