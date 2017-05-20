@@ -133,7 +133,9 @@ class Executor
         $success = true;
 
         foreach ($plugins as $plugin => $options) {
-            $this->logger->log(Lang::get('running_plugin', $plugin));
+            $this->logger->logSuccess("\n\n#################################");
+            $this->logger->logSuccess(Lang::get('running_plugin', $plugin));
+            $this->logger->logSuccess('#################################');
 
             $this->setPluginStatus($stage, $plugin, Build::STATUS_RUNNING);
 

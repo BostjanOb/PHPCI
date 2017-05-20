@@ -150,9 +150,8 @@ class PhpCodeSniffer implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
         $phpcs = $this->phpci->findBinary('phpcs');
 
-        $this->phpci->logExecOutput(false);
-
-        $cmd = $phpcs . ' --report=json %s %s %s %s %s "%s"';
+        $this->phpci->executeCommand($phpcs . ' --version');
+        $cmd = $phpcs . ' --colors --report-width=500 --report=full %s %s %s %s %s "%s"';
         $this->phpci->executeCommand(
             $cmd,
             $standard,
@@ -164,23 +163,27 @@ class PhpCodeSniffer implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         );
 
         $output = $this->phpci->getLastOutput();
-        list($errors, $warnings) = $this->processReport($output);
 
-        $this->phpci->logExecOutput(true);
+        $errors = preg_match_all('/\|.+ERROR.+\|/m', $output);
+        $warnings = preg_match_all('/\|.+WARNING.+\|/m', $output);
 
-        $success = true;
         $this->build->storeMeta('phpcs-warnings', $warnings);
         $this->build->storeMeta('phpcs-errors', $errors);
 
-        if ($this->allowed_warnings != -1 && $warnings > $this->allowed_warnings) {
-            $success = false;
+        var_dump($errors, $warnings);
+
+        var_dump(
+            ($this->allowed_warnings != -1 && $warnings > $this->allowed_warnings),
+            ($this->allowed_errors != -1 && $errors > $this->allowed_errors)
+        );
+
+        if ( ($this->allowed_warnings != -1 && $warnings > $this->allowed_warnings)
+            || ($this->allowed_errors != -1 && $errors > $this->allowed_errors)
+        ) {
+            return false;
         }
 
-        if ($this->allowed_errors != -1 && $errors > $this->allowed_errors) {
-            $success = false;
-        }
-
-        return $success;
+        return true;
     }
 
     /**
@@ -206,41 +209,5 @@ class PhpCodeSniffer implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         }
 
         return array($ignore, $standard, $suffixes);
-    }
-
-    /**
-     * Process the PHPCS output report.
-     * @param $output
-     * @return array
-     * @throws \Exception
-     */
-    protected function processReport($output)
-    {
-        $data = json_decode(trim($output), true);
-
-        if (!is_array($data)) {
-            $this->phpci->log($output);
-            throw new \Exception(PHPCI\Helper\Lang::get('could_not_process_report'));
-        }
-
-        $errors = $data['totals']['errors'];
-        $warnings = $data['totals']['warnings'];
-
-        foreach ($data['files'] as $fileName => $file) {
-            $fileName = str_replace($this->phpci->buildPath, '', $fileName);
-
-            foreach ($file['messages'] as $message) {
-                $this->build->reportError(
-                    $this->phpci,
-                    'php_code_sniffer',
-                    'PHPCS: ' . $message['message'],
-                    $message['type'] == 'ERROR' ? BuildError::SEVERITY_HIGH : BuildError::SEVERITY_LOW,
-                    $fileName,
-                    $message['line']
-                );
-            }
-        }
-
-        return array($errors, $warnings);
     }
 }

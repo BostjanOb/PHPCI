@@ -65,6 +65,17 @@ class BuildController extends \PHPCI\Controller
         $this->view->build    = $build;
         $this->view->data     = $this->getBuildData($build);
 
+        $this->view->meta = [];
+        $meta = $this->buildStore->getMeta('plugin-summary', $build->getProjectId(), $buildId, $build->getBranch(), 1);
+        if ( isset($meta[0]['meta_value']) )
+            $this->view->meta = $meta[0]['meta_value'];
+
+        $this->view->statusIcons = [ 'fa-clock-o', 'fa-cogs', 'fa-check', 'fa-remove' ];
+        $this->view->statusLabels = [ 'pending', 'running', 'successful', 'failed' ];
+        $this->view->statusClasses = ['text-blue', 'text-yellow', 'text-green', 'text-red'];
+
+//        echo '<pre>'; print_r($this->view->meta); die;
+
         $this->layout->title = Lang::get('build_n', $buildId);
         $this->layout->subtitle = $build->getProjectTitle();
 

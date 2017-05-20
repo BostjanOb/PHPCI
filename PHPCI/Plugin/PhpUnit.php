@@ -161,21 +161,21 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
             $success &= $this->runDir($this->directory);
         }
 
-        $tapString = $this->phpci->getLastOutput();
-        $tapString = mb_convert_encoding($tapString, "UTF-8", "ISO-8859-1");
+//        $tapString = $this->phpci->getLastOutput();
+//        $tapString = mb_convert_encoding($tapString, "UTF-8", "ISO-8859-1");
 
-        try {
-            $tapParser = new TapParser($tapString);
-            $output = $tapParser->parse();
-        } catch (\Exception $ex) {
-            $this->phpci->logFailure($tapString);
-            throw $ex;
-        }
-
-        $failures = $tapParser->getTotalFailures();
-
-        $this->build->storeMeta('phpunit-errors', $failures);
-        $this->build->storeMeta('phpunit-data', $output);
+//        try {
+//            $tapParser = new TapParser($tapString);
+//            $output = $tapParser->parse();
+//        } catch (\Exception $ex) {
+//            $this->phpci->logFailure($tapString);
+//            throw $ex;
+//        }
+//
+//        $failures = $tapParser->getTotalFailures();
+//
+//        $this->build->storeMeta('phpunit-errors', $failures);
+//        $this->build->storeMeta('phpunit-data', $output);
 
         //$this->phpci->logExecOutput(true);
 
@@ -199,7 +199,7 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
             $phpunit = $this->phpci->findBinary('phpunit');
 
-            $cmd = $phpunit . ' --tap %s -c "%s" ' . $this->coverage . $this->path;
+            $cmd = $phpunit . ' %s -c "%s" ' . $this->coverage . $this->path;
             $success = $this->phpci->executeCommand($cmd, $this->args, $this->phpci->buildPath . $configPath);
 
             if ($this->runFrom) {
@@ -225,7 +225,7 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
             $phpunit = $this->phpci->findBinary('phpunit');
 
-            $cmd = $phpunit . ' --tap %s "%s"';
+            $cmd = $phpunit . ' %s "%s"';
             $success = $this->phpci->executeCommand($cmd, $this->args, $this->phpci->buildPath . $directory);
             chdir($curdir);
             return $success;

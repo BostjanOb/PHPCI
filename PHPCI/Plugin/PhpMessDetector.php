@@ -119,14 +119,19 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
             return false;
         }
 
-        $phpmdBinaryPath = $this->phpci->findBinary('phpmd');
+        $phpmd = $this->phpci->findBinary('phpmd');
 
-        $this->executePhpMd($phpmdBinaryPath);
+        $this->phpci->executeCommand($phpmd . ' --version');
+        $this->executePhpMd($phpmd);
 
-        $errorCount = $this->processReport(trim($this->phpci->getLastOutput()));
+        $errorCount = substr_count(trim($this->phpci->getLastOutput()), "\n");
         $this->build->storeMeta('phpmd-warnings', $errorCount);
 
-        return $this->wasLastExecSuccessful($errorCount);
+        if ($this->allowed_warnings != -1 && $errorCount > $this->allowed_warnings) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -139,45 +144,6 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         if (isset($options[$key]) && is_array($options[$key])) {
             $this->{$key} = $options[$key];
         }
-    }
-
-    /**
-     * Process PHPMD's XML output report.
-     * @param $xmlString
-     * @return array
-     * @throws \Exception
-     */
-    protected function processReport($xmlString)
-    {
-        $xml = simplexml_load_string($xmlString);
-
-        if ($xml === false) {
-            $this->phpci->log($xmlString);
-            throw new \Exception('Could not process PHPMD report XML.');
-        }
-
-        $warnings = 0;
-
-        foreach ($xml->file as $file) {
-            $fileName = (string)$file['name'];
-            $fileName = str_replace($this->phpci->buildPath, '', $fileName);
-
-            foreach ($file->violation as $violation) {
-                $warnings++;
-
-                $this->build->reportError(
-                    $this->phpci,
-                    'php_mess_detector',
-                    (string)$violation,
-                    PHPCI\Model\BuildError::SEVERITY_HIGH,
-                    $fileName,
-                    (int)$violation['beginline'],
-                    (int)$violation['endline']
-                );
-            }
-        }
-
-        return $warnings;
     }
 
     /**
@@ -206,7 +172,7 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
      */
     protected function executePhpMd($binaryPath)
     {
-        $cmd = $binaryPath . ' "%s" xml %s %s %s';
+        $cmd = $binaryPath . ' "%s" text %s %s %s';
 
         $path = $this->getTargetPath();
 
@@ -221,7 +187,7 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         }
 
         // Disable exec output logging, as we don't want the XML report in the log:
-        $this->phpci->logExecOutput(false);
+//        $this->phpci->logExecOutput(false);
 
         // Run PHPMD:
         $this->phpci->executeCommand(
@@ -233,7 +199,7 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         );
 
         // Re-enable exec output logging:
-        $this->phpci->logExecOutput(true);
+//        $this->phpci->logExecOutput(true);
     }
 
     /**
@@ -248,22 +214,5 @@ class PhpMessDetector implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
             return $path;
         }
         return $path;
-    }
-
-    /**
-     * Returns a boolean indicating if the error count can be considered a success.
-     *
-     * @param int $errorCount
-     * @return bool
-     */
-    protected function wasLastExecSuccessful($errorCount)
-    {
-        $success = true;
-
-        if ($this->allowed_warnings != -1 && $errorCount > $this->allowed_warnings) {
-            $success = false;
-            return $success;
-        }
-        return $success;
     }
 }

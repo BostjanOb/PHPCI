@@ -221,7 +221,7 @@ class Builder implements LoggerAwareInterface
                     $this->pluginExecutor->executePlugins($this->config, 'fixed');
                 }
 
-                $this->buildLogger->logSuccess(Lang::get('build_success'));
+                $this->buildLogger->logSuccess("\n\n##########################\n" . Lang::get('build_success') . "\n##########################");
             } else {
                 $this->pluginExecutor->executePlugins($this->config, 'failure');
 
@@ -229,7 +229,7 @@ class Builder implements LoggerAwareInterface
                     $this->pluginExecutor->executePlugins($this->config, 'broken');
                 }
 
-                $this->buildLogger->logFailure(Lang::get('build_failed'));
+                $this->buildLogger->logFailure("\n\n##########################\n" . Lang::get('build_failed') . "\n##########################");
             }
         } catch (\Exception $ex) {
             $this->build->setStatus(Build::STATUS_FAILED);
