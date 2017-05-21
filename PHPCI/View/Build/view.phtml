@@ -45,26 +45,26 @@
 
                     <tr>
                         <th>Duration</th>
-                        <td style="text-align: right" class="build-duration duration" data-duration="<?php print $build->getDuration(); ?>">
+                        <td id="build-duration" style="text-align: right" class="build-duration duration" data-duration="<?php print $build->getDuration(); ?>">
 
                         </td>
                     </tr>
 
                     <tr>
                         <th>Created</th>
-                        <td style="text-align: right" class="build-created datetime" data-date="<?php print $build->getCreated() ? $build->getCreated()->format('Y-m-d H:i:s') : ''; ?>">
+                        <td id="build-created" style="text-align: right" class="build-created datetime" data-date="<?php print $build->getCreated() ? $build->getCreated()->format('Y-m-d H:i:s') : ''; ?>">
                         </td>
                     </tr>
 
                     <tr>
                         <th>Started</th>
-                        <td style="text-align: right" class="build-started datetime" data-date="<?php print $build->getStarted() ? $build->getStarted()->format('Y-m-d H:i:s') : ''; ?>">
+                        <td id="build-started" style="text-align: right" class="build-started datetime" data-date="<?php print $build->getStarted() ? $build->getStarted()->format('Y-m-d H:i:s') : ''; ?>">
                         </td>
                     </tr>
 
                     <tr>
                         <th>Finished</th>
-                        <td style="text-align: right" class="build-finished datetime" data-date="<?php print $build->getFinished() ? $build->getFinished()->format('Y-m-d H:i:s') : ''; ?>">
+                        <td id="build-finished" style="text-align: right" class="build-finished datetime" data-date="<?php print $build->getFinished() ? $build->getFinished()->format('Y-m-d H:i:s') : ''; ?>">
 
                         </td>
                     </tr>
@@ -81,45 +81,8 @@
                 </h3>
             </div>
 
-            <div class="box-body no-padding">
-                <table class="table" id="plugin-summary">
-                    <thead>
-                        <tr>
-                            <th>Stage</th>
-                            <th>Plugin</th>
-                            <th>Status</th>
-                            <th class="text-right">Duration (s)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($meta as $stageName => $stage): foreach ($stage as $plugin => $plugindata): ?>
-                            <tr class="<?php echo $statusClasses[$plugindata['status']] ?>">
-                                <td><?php echo $stageName ?></td>
-                                <td><?php echo $plugin ?></td>
-                                <td>
-                                    <span>
-                                        <i class="fa <?php echo  $statusIcons[$plugindata['status']] ?>"></i>&nbsp;
-                                        <?php echo $statusLabels[ $plugindata['status'] ] ?>
-                                    </span>
-                                </td>
-                                <td class="text-right">
-                                    <?php
-                                        $ended = $plugindata['ended'] ?? time();
-                                        echo ( isset($plugindata['started']) ? ($ended - $plugindata['started']) : '-');
-                                    ?>
-                                </td>
-                            </tr>
-                            <?php if ( isset($pluginsMessage[$plugin . ':message']) ): ?>
-                                <tr class="<?php echo $statusClasses[$plugindata['status']] ?>">
-                                    <td colspan="2"></td>
-                                    <td colspan="2">
-                                        <?php echo trim($pluginsMessage[$plugin . ':message'], '"'); ?>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        <?php endforeach; endforeach; ?>
-                    </tbody>
-                </table>
+            <div class="box-body no-padding" id="buildSummary">
+                <?php require __DIR__ . '/summary.phtml'; ?>
             </div>
         </div>
     </div>
@@ -132,25 +95,60 @@
         <h3 class="box-title">Build log</h3>
     </div>
     <div class="box-body">
-        <pre style="height: 400px; overflow-y: auto;"><?php print $data['log']; ?></pre>
+        <pre id="buildLog" style="height: 400px; overflow-y: auto;"><?php print $data['log']; ?></pre>
     </div>
 </div>
 
-<script src="<?php print PHPCI_URL; ?>assets/js/build.js"></script>
 <script>
-    var ActiveBuild = new Build(<?php print $build->getId() ?>);
-    ActiveBuild.setupBuild(<?php print json_encode($data); ?>, <?php print json_encode($build->getFileLinkTemplate()); ?>);
-
     $(document).ready(function() {
-        ActiveBuild.renderPlugins();
-
         $('#delete-build').on('click', function (e) {
             e.preventDefault();
             confirmDelete(
                 "<?php echo PHPCI_URL ?>build/delete/<?php print $build->getId(); ?>", "Build"
             ).onCloseConfirmed = function () {window.location = '/'};
         });
+
+        <?php if($build->status == 0 || $build->status == 1): ?>
+            loadData();
+        <?php endif; ?>
     });
 
+    function loadData() {
+        $.getJSON('/build/data/<?php print $build->getId(); ?>', function(data) {
+            setSkin(data.status);
+            $('#build-created').html(data.created);
+            $('#build-started').html(data.started);
+            $('#build-finished').html(data.finished);
+            $('#build-duration').html(data.duration + ' s');
 
+            $('#buildLog').html(data.log);
+
+            $('#buildSummary').load('/build/summary/<?php print $build->getId(); ?>');
+
+            if ( data.status == 0 ) {
+                setTimeout(loadData, 3000);
+            }
+            else if ( data.status == 1) {
+                setTimeout(loadData, 1000);
+            }
+        });
+    }
+
+    function setSkin(status) {
+        $('body').removeClass('skin-blue skin-red skin-green skin-yellow');
+        switch (status) {
+            case 0:
+                $('body').addClass('skin-blue');
+                break;
+            case 1:
+                $('body').addClass('skin-yellow');
+                break;
+            case 2:
+                $('body').addClass('skin-green');
+                break;
+            case 3:
+                $('body').addClass('skin-red');
+                break;
+        }
+    }
 </script>

@@ -61,26 +61,11 @@ class BuildController extends \PHPCI\Controller
             throw new NotFoundException(Lang::get('build_x_not_found', $buildId));
         }
 
-        $this->view->statusIcons = ['fa-clock-o', 'fa-cogs', 'fa-check', 'fa-remove'];
-        $this->view->statusLabels = ['pending', 'running', 'successful', 'failed'];
-        $this->view->statusClasses = ['text-blue', 'text-yellow', 'text-green', 'text-red'];
         $this->view->plugins = $this->getUiPlugins();
         $this->view->build = $build;
         $this->view->data = $this->getBuildData($build);
 
-        $this->view->meta = [];
-        $this->view->pluginsMessage = [];
-        $meta = $this->buildStore->getMeta('plugin-summary', $build->getProjectId(), $buildId, $build->getBranch(), 1);
-        if (isset($meta[0]['meta_value'])) {
-
-            $plugins = [];
-            $this->view->meta = $meta[0]['meta_value'];
-            foreach ($this->view->meta as $steps) {
-                $plugins = array_merge($plugins, array_keys($steps));
-            }
-
-            $this->view->pluginsMessage = $this->buildStore->getMessagesForPlugins($plugins, $build->getProjectId(), $buildId, $build->getBranch());
-        }
+        $this->setSummaryData($build);
 
 //        echo '<pre>'; print_r($this->view->meta); die;
 
@@ -176,6 +161,24 @@ class BuildController extends \PHPCI\Controller
         $response = new JsonResponse();
         $response->setContent($data);
         return $response;
+    }
+
+    public function summary($buildId) {
+        try {
+            $build = BuildFactory::getBuildById($buildId);
+        } catch (\Exception $ex) {
+            $build = null;
+        }
+
+        if (empty($build)) {
+            throw new NotFoundException(Lang::get('build_x_not_found', $buildId));
+        }
+
+        $this->view->plugins = $this->getUiPlugins();
+
+        $this->setSummaryData($build);
+
+        $this->layout = null;
     }
 
     /**
@@ -294,5 +297,24 @@ class BuildController extends \PHPCI\Controller
 
         ksort($rtn['items']);
         return $rtn;
+    }
+
+    private function setSummaryData($build) {
+        $this->view->statusIcons = ['fa-clock-o', 'fa-cogs', 'fa-check', 'fa-remove'];
+        $this->view->statusLabels = ['pending', 'running', 'successful', 'failed'];
+        $this->view->statusClasses = ['text-blue', 'text-yellow', 'text-green', 'text-red'];
+        $this->view->meta = [];
+        $this->view->pluginsMessage = [];
+        $meta = $this->buildStore->getMeta('plugin-summary', $build->getProjectId(), $build->id, $build->getBranch(), 1);
+        if (isset($meta[0]['meta_value'])) {
+
+            $plugins = [];
+            $this->view->meta = $meta[0]['meta_value'];
+            foreach ($this->view->meta as $steps) {
+                $plugins = array_merge($plugins, array_keys($steps));
+            }
+
+            $this->view->pluginsMessage = $this->buildStore->getMessagesForPlugins($plugins, $build->getProjectId(), $build->id, $build->getBranch());
+        }
     }
 }

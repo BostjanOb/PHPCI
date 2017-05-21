@@ -1,0 +1,38 @@
+<table class="table" id="plugin-summary">
+    <thead>
+    <tr>
+        <th>Stage</th>
+        <th>Plugin</th>
+        <th>Status</th>
+        <th class="text-right">Duration (s)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($meta as $stageName => $stage): foreach ($stage as $plugin => $plugindata): ?>
+        <tr class="<?php echo $statusClasses[$plugindata['status']] ?>">
+            <td><?php echo $stageName ?></td>
+            <td><?php echo $plugin ?></td>
+            <td>
+                                    <span>
+                                        <i class="fa <?php echo  $statusIcons[$plugindata['status']] ?>"></i>&nbsp;
+                                        <?php echo $statusLabels[ $plugindata['status'] ] ?>
+                                    </span>
+            </td>
+            <td class="text-right">
+                <?php
+                $ended = $plugindata['ended'] ?? time();
+                echo ( isset($plugindata['started']) ? ($ended - $plugindata['started']) : '-');
+                ?>
+            </td>
+        </tr>
+        <?php if ( isset($pluginsMessage[$plugin . ':message']) ): ?>
+            <tr class="<?php echo $statusClasses[$plugindata['status']] ?>">
+                <td colspan="2"></td>
+                <td colspan="2">
+                    <?php echo trim($pluginsMessage[$plugin . ':message'], '"'); ?>
+                </td>
+            </tr>
+        <?php endif; ?>
+    <?php endforeach; endforeach; ?>
+    </tbody>
+</table>
