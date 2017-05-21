@@ -150,8 +150,15 @@ class PhpCodeSniffer implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
         $phpcs = $this->phpci->findBinary('phpcs');
 
+        if ( !is_array($this->path) )
+            $this->path = [$this->path];
+
+        array_walk($this->path, function(&$item) {
+            $item = escapeshellarg($this->phpci->buildPath . $item);
+        });
+
         $this->phpci->executeCommand($phpcs . ' --version');
-        $cmd = $phpcs . ' --colors --report-width=500 --report=full %s %s %s %s %s "%s"';
+        $cmd = $phpcs . ' --colors --report-width=500 --report=full %s %s %s %s %s %s';
         $this->phpci->executeCommand(
             $cmd,
             $standard,
@@ -159,7 +166,7 @@ class PhpCodeSniffer implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
             $ignore,
             $this->tab_width,
             $this->encoding,
-            $this->phpci->buildPath . $this->path
+            implode(' ', $this->path)
         );
 
         $output = $this->phpci->getLastOutput();
