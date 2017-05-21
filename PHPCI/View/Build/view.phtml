@@ -125,11 +125,11 @@
 
             $('#buildSummary').load('/build/summary/<?php print $build->getId(); ?>');
 
-            if ( data.status == 0 ) {
-                setTimeout(loadData, 3000);
-            }
-            else if ( data.status == 1) {
+            if ( data.status == 1) { //refresh runing process quicker
                 setTimeout(loadData, 1000);
+            }
+            else if ( data.finished == null ) { // if not finished refresh slower
+                setTimeout(loadData, 3000);
             }
         });
     }
